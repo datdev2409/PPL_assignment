@@ -1,0 +1,1 @@
+auto,break,false,float,integer,return,void,out,array,boolean,for,string,continue,do,else,function,if,true,while,of,inherit,<EOF>
