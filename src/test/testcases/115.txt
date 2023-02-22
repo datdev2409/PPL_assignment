@@ -1,1 +1,1 @@
-"This is \ca string containing tab 	"
+"This \c is a string containing tab 	"

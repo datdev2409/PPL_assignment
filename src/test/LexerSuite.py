@@ -49,7 +49,7 @@ class LexerSuite(unittest.TestCase):
         self.assertTrue(TestLexer.test('"He asked me: \\"Where is John?\\""', 'He asked me: "Where is John?",<EOF>', 114))
     
     def test_string_lit(self):
-        self.assertTrue(TestLexer.test("\"This is \ca string containing tab \t\"", 'This is a string containing tab \t,<EOF>', 115))
+        self.assertTrue(TestLexer.test('"This \c is a string containing tab \t"', 'This is a string containing tab \t,<EOF>', 115))
     # def test_escape_quote(self):
     #     self.assertTrue(TestLexer.test('\\"', '\\",<EOF>', 115))
 

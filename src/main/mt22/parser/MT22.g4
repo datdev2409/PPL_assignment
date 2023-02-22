@@ -86,13 +86,14 @@ fragment EXP_PART: [eE] [+-]? DIGIT+;
 // It will never match this token, it match TRUE, FALSE keyword above
 BOOL_LIT: (TRUE | FALSE);
 
-STRING_LIT: '"' (([\\]["]) | ~["] )* '"' {
+fragment ESCAPE: [\\][bfrnt'\\"];
+STRING_LIT: '"' (ESCAPE | ~["\\] )* '"' {
 	escapes = ['b', 'f', 'r', 'n', 't', '\'', '\\']
 	self.text = self.text[1:-1].replace('\\"', '"')
 	idx = self.text.find('\\')
-	print(idx)
+	l = len(self.text)
 	if idx != -1 and self.text[idx + 1] not in escapes:
-		raise IllegalEscape(self.text[0:idx])
+		raise IllegalEscape(self.text[0:idx + 1])
 };
 
 fragment EXPR: INT_LIT | FLOAT_LIT | BOOL_LIT | STRING_LIT;
@@ -103,7 +104,7 @@ ID: [a-zA-Z_] [a-zA-Z_0-9]*;
 
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
-
+// [\\]~[bfrnt'\\"] 
 ERROR_CHAR: .{raise ErrorToken(self.text)};
 UNCLOSE_STRING: .;
-ILLEGAL_ESCAPE: . {raise IllegalEscape(self.text)};
+ILLEGAL_ESCAPE: '"' [.]* '\\c'  {raise IllegalEscape(self.text) };
