@@ -8,7 +8,21 @@ options{
 	language=Python3;
 }
 
-program:  EOF ;
+program: statement*  EOF ;
+
+statement: varDeclStmt | funcDeclStmt;
+
+listID: ID (COMMA ID)*;
+varDeclStmt: listID COLON typeDecl (ASSIGN expr (COMMA expr)*)? SEMI_COLON;
+funcDeclStmt: ID ':' FUNCTION typeDecl LRB listParamDecl RRB blockStmt;
+blockStmt: LCB statement* RCB;
+
+typeDecl: BOOLEAN | INTEGER | FLOAT | STRING | ARRAY | VOID | AUTO;
+expr: 'expr';
+
+listParamDecl: (paramDecl (COMMA paramDecl)*)?;
+paramDecl: INHERIT? OUT? ID ':' typeDecl;
+
 
 
 // --- COMMENT ---
@@ -80,20 +94,16 @@ INT_LIT: '0' | [1-9][0-9_]* {self.text = self.text.replace("_", "")};
 // Consider case: without INT_LIT
 FLOAT_LIT: (INT_LIT DECIMAL_PART? EXP_PART | INT_LIT DECIMAL_PART | DECIMAL_PART EXP_PART) {self.text = self.text.replace("_", "")};
 fragment DIGIT: [0-9];
-fragment DECIMAL_PART: '.' DIGIT+;
+fragment DECIMAL_PART: '.' DIGIT*;
 fragment EXP_PART: [eE] [+-]? DIGIT+;
 
 // It will never match this token, it match TRUE, FALSE keyword above
 BOOL_LIT: (TRUE | FALSE);
 
-fragment ESCAPE: [\\][bfrnt'\\"];
+fragment NEWLINE : '\r'? '\n';
+fragment ESCAPE: '\\b' | '\\f' | '\\r' | '\\n' | '\\t' | '\\\'' | '\\\\' | '\\"';
 STRING_LIT: '"' (ESCAPE | ~["\\] )* '"' {
-	escapes = ['b', 'f', 'r', 'n', 't', '\'', '\\']
-	self.text = self.text[1:-1].replace('\\"', '"')
-	idx = self.text.find('\\')
-	l = len(self.text)
-	if idx != -1 and self.text[idx + 1] not in escapes:
-		raise IllegalEscape(self.text[0:idx + 1])
+	self.text = self.text[1:-1].replace("\\", "")
 };
 
 fragment EXPR: INT_LIT | FLOAT_LIT | BOOL_LIT | STRING_LIT;
@@ -105,6 +115,10 @@ ID: [a-zA-Z_] [a-zA-Z_0-9]*;
 WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
 
 // [\\]~[bfrnt'\\"] 
-ERROR_CHAR: .{raise ErrorToken(self.text)};
-UNCLOSE_STRING: .;
-ILLEGAL_ESCAPE: '"' [.]* '\\c'  {raise IllegalEscape(self.text) };
+ERROR_CHAR: . {raise ErrorToken(self.text)};
+UNCLOSE_STRING: '"' (~["] | '\\"')*? (NEWLINE | EOF) {
+	raise UncloseString(self.text[1:])
+};
+ILLEGAL_ESCAPE: '"' (~["] | '\\"')* [\\]~[bfrnt'\\"] {
+	raise IllegalEscape(self.text[1:]) 
+};

@@ -93,7 +93,12 @@ class TestParser:
         TestParser.check(SOL_DIR, inputfile, num)
         dest = open(SOL_DIR + str(num) + ".txt", "r")
         line = dest.read()
-        print(line)
+        if line != expect:
+            print("\n" + str(num) + " ------------")
+            print("input: " + input)
+            print("result: " + line)
+            print("expect: " + expect)
+            print("-----------------------------")
         return line == expect
 
     @staticmethod

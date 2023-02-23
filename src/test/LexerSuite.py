@@ -34,7 +34,7 @@ class LexerSuite(unittest.TestCase):
         self.assertTrue(TestLexer.test("0", "0,<EOF>", 109))
     
     def test_float_lit(self):
-        self.assertTrue(TestLexer.test(".234e3", ".234e3,<EOF>", 110))
+        self.assertTrue(TestLexer.test("10.", "10.,<EOF>", 110))
 
     def test_float_lit2(self):
         self.assertTrue(TestLexer.test("1_234.5_67", "1234.5,_67,<EOF>", 111))
@@ -48,19 +48,20 @@ class LexerSuite(unittest.TestCase):
     def test_string_lit(self):
         self.assertTrue(TestLexer.test('"He asked me: \\"Where is John?\\""', 'He asked me: "Where is John?",<EOF>', 114))
     
-    def test_string_lit(self):
-        self.assertTrue(TestLexer.test('"This \c is a string containing tab \t"', 'This is a string containing tab \t,<EOF>', 115))
-    # def test_escape_quote(self):
-    #     self.assertTrue(TestLexer.test('\\"', '\\",<EOF>', 115))
+    def test_string_lit2(self):
+        self.assertTrue(TestLexer.test('"This \c is a string containing tab \t"', 'Illegal Escape In String: This \c', 115))
+
+    def test_string_lit3(self):
+        self.assertTrue(TestLexer.test('"This is a unclosed string', 'Unclosed String: This is a unclosed string', 116))
 
     def test_array_lit(self):
-        self.assertTrue(TestLexer.test("{1, 5, 7, 12}", "{1, 5, 7, 12},<EOF>", 116))
+        self.assertTrue(TestLexer.test("{1, 5, 7, 12}", "{1, 5, 7, 12},<EOF>", 117))
     
     def test_array_lit2(self):
-        self.assertTrue(TestLexer.test("{1,2,3}", "{1,2,3},<EOF>", 117))
+        self.assertTrue(TestLexer.test("{1,2,3}", "{1,2,3},<EOF>", 118))
 
     def test_indentifier(self):
-        self.assertTrue(TestLexer.test("WriteLn", "WriteLn,<EOF>", 118))
+        self.assertTrue(TestLexer.test("WriteLn", "WriteLn,<EOF>", 119))
 
     
 
