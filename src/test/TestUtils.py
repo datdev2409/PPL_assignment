@@ -2,6 +2,7 @@ import sys
 import os
 from antlr4 import *
 from antlr4.error.ErrorListener import ConsoleErrorListener, ErrorListener
+from antlr4.tree.Tree import Tree
 
 from main.mt22.parser.lexererr import ErrorToken, IllegalEscape, UncloseString
 if not './main/mt22/parser/' in sys.path:
@@ -81,7 +82,6 @@ class SyntaxException(Exception):
     def __init__(self, msg):
         self.message = msg
 
-
 class TestParser:
     @staticmethod
     def createErrorListener():
@@ -119,6 +119,58 @@ class TestParser:
             dest.write(str(e))
         finally:
             dest.close()
+    
+    @staticmethod 
+    def getTokenNames(input_string):
+        lexer = Lexer(InputStream(input_string))
+        tokens = CommonTokenStream(lexer)
+        token_stream = CommonTokenStream(lexer)
+        token_stream.fill()
+        token_names = []
+        for token in token_stream.tokens:
+            token_names.append(lexer.symbolicNames[token.type])
+        
+        return str(token_names)
+    
+    @staticmethod 
+    def getParseTree(input_string):
+        lexer = Lexer(InputStream(input_string))
+        token_stream = CommonTokenStream(lexer)
+        parser = Parser(token_stream)
+        parse_tree = parser.program()
+
+        for node in BFSIterator(parse_tree):
+            if isinstance(node, TerminalNode):
+                print(f"Visiting terminal {node.getText()}")
+            else:
+                rule_name = parser.ruleNames[node.getRuleIndex()]
+                print(f"Entering rule {rule_name}")
+                print(Tree.fromRuleContext(Parser, parse_tree))
+    
+    @staticmethod
+    def check(input):
+        lexer = Lexer(InputStream(input))
+        listener = TestParser.createErrorListener()
+        tokens = CommonTokenStream(lexer)
+        parser = Parser(tokens)
+        parser.removeErrorListeners()
+        parser.addErrorListener(listener)
+        try:
+            parser.program()
+            print("-------------------------------")
+            print("successful")
+            print(TestParser.getTokenNames(input))
+            # TestParser.getParseTree(input)
+            print("-------------------------------")
+        except SyntaxException as f:
+            print(f.message)
+            # dest.write(f.message)
+        except Exception as e:
+            print(str(e))
+            # dest.write(str(e))
+        # finally:
+            # dest.close()
+    
 
 
 # class TestAST:

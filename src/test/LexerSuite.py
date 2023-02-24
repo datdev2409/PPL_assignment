@@ -52,7 +52,7 @@ class LexerSuite(unittest.TestCase):
         self.assertTrue(TestLexer.test('"This \c is a string containing tab \t"', 'Illegal Escape In String: This \c', 115))
 
     def test_string_lit3(self):
-        self.assertTrue(TestLexer.test('"This is a unclosed string', 'Unclosed String: This is a unclosed string', 116))
+        self.assertTrue(TestLexer.test('"This is a unclosed string\nhello world', 'Unclosed String: This is a unclosed string', 116))
 
     def test_array_lit(self):
         self.assertTrue(TestLexer.test("{1, 5, 7, 12}", "{1, 5, 7, 12},<EOF>", 117))

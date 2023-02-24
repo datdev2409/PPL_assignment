@@ -4,39 +4,83 @@ grammar MT22;
 from lexererr import *
 }
 
-options{
-	language=Python3;
+options {
+	language = Python3;
 }
 
-program: statement*  EOF ;
+program: statement* EOF;
 
-statement: varDeclStmt | funcDeclStmt;
+statement:
+	varDeclStmt
+	| funcDeclStmt
+	| expr SEMI_COLON // use for testing purpose only
+	| TRUE;
 
 listID: ID (COMMA ID)*;
-varDeclStmt: listID COLON typeDecl (ASSIGN expr (COMMA expr)*)? SEMI_COLON;
-funcDeclStmt: ID ':' FUNCTION typeDecl LRB listParamDecl RRB blockStmt;
+varDeclStmt:
+	listID COLON typeDecl (ASSIGN expr (COMMA expr)*)? SEMI_COLON;
+funcDeclStmt:
+	ID ':' FUNCTION typeDecl LRB listParamDecl RRB blockStmt;
 blockStmt: LCB statement* RCB;
-
-typeDecl: BOOLEAN | INTEGER | FLOAT | STRING | ARRAY | VOID | AUTO;
-expr: 'expr';
 
 listParamDecl: (paramDecl (COMMA paramDecl)*)?;
 paramDecl: INHERIT? OUT? ID ':' typeDecl;
+typeDecl:
+	BOOLEAN
+	| INTEGER
+	| FLOAT
+	| STRING
+	| ARRAY
+	| VOID
+	| AUTO;
 
+// -- EXPRESSION --
+expr:
+	int_expr
+	| number_expr
+	| bool_expr
+	| string_expr
+	| index_operator_expr;
 
+int_expr: LRB int_expr RRB | int_expr MOD int_expr | INT_LIT | ID;
+
+number_expr:
+	LRB number_expr RRB
+	| <assoc = right> number_expr DIV number_expr
+	| number_expr MUL number_expr
+	| number_expr SUBTRACT number_expr
+	| number_expr ADD number_expr
+	| INT_LIT
+	| FLOAT_LIT
+	| ID;
+
+bool_expr:
+	LRB bool_expr RRB
+	| NEG bool_expr
+	| bool_expr (AND | OR) bool_expr
+	| number_expr (LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) number_expr
+	| int_expr (EQUAL | DIFF) int_expr
+	| bool_expr (EQUAL | DIFF) bool_expr
+	| BOOL_LIT
+	| ID
+	;
+
+string_expr: string_expr CONCAT string_expr | STRING_LIT | ID;
+
+index_list: number_expr (COMMA number_expr)*;
+index_operator_expr: ID LSB index_list RSB;
 
 // --- COMMENT ---
 C_COMMENT: '/*' (.)*? '*/' -> skip;
 CPP_COMMENT: '//' ~[\r\n]* -> skip;
 
-// Lexer
-// --- KEYWORD ---
+// Lexer --- KEYWORD ---
 AUTO: 'auto';
 BREAK: 'break';
 FALSE: 'false';
-FLOAT: 'float'; 
+FLOAT: 'float';
 INTEGER: 'integer';
-RETURN: 'return'; 
+RETURN: 'return';
 VOID: 'void';
 OUT: 'out';
 ARRAY: 'array';
@@ -49,7 +93,7 @@ ELSE: 'else';
 FUNCTION: 'function';
 IF: 'if';
 TRUE: 'true';
-WHILE: 'while'; 
+WHILE: 'while';
 OF: 'of';
 INHERIT: 'inherit';
 
@@ -73,7 +117,6 @@ GREATER_EQUAL: '>=';
 
 CONCAT: '::';
 
-
 // --- SEPERATORS ---
 LRB: '(';
 RRB: ')';
@@ -88,11 +131,16 @@ RCB: '}';
 ASSIGN: '=';
 
 // --- LITERALS ---
-INT_LIT: '0' | [1-9][0-9_]* {self.text = self.text.replace("_", "")};
-
+INT_LIT:
+	'0'
+	| [1-9][0-9_]* {self.text = self.text.replace("_", "")};
 
 // Consider case: without INT_LIT
-FLOAT_LIT: (INT_LIT DECIMAL_PART? EXP_PART | INT_LIT DECIMAL_PART | DECIMAL_PART EXP_PART) {self.text = self.text.replace("_", "")};
+FLOAT_LIT: (
+		INT_LIT DECIMAL_PART? EXP_PART
+		| INT_LIT DECIMAL_PART
+		| DECIMAL_PART EXP_PART
+	) {self.text = self.text.replace("_", "")};
 fragment DIGIT: [0-9];
 fragment DECIMAL_PART: '.' DIGIT*;
 fragment EXP_PART: [eE] [+-]? DIGIT+;
@@ -100,9 +148,18 @@ fragment EXP_PART: [eE] [+-]? DIGIT+;
 // It will never match this token, it match TRUE, FALSE keyword above
 BOOL_LIT: (TRUE | FALSE);
 
-fragment NEWLINE : '\r'? '\n';
-fragment ESCAPE: '\\b' | '\\f' | '\\r' | '\\n' | '\\t' | '\\\'' | '\\\\' | '\\"';
-STRING_LIT: '"' (ESCAPE | ~["\\] )* '"' {
+fragment NEWLINE: '\r'? '\n';
+fragment ESCAPE:
+	'\\b'
+	| '\\f'
+	| '\\r'
+	| '\\n'
+	| '\\t'
+	| '\\\''
+	| '\\\\'
+	| '\\"';
+STRING_LIT:
+	'"' (ESCAPE | ~["\\])* '"' {
 	self.text = self.text[1:-1].replace("\\", "")
 };
 
@@ -112,13 +169,15 @@ ARRAY_LIT: '{' EXPR (',' ' '* EXPR ' '*)* '}';
 // --- INDENTIFIER ---
 ID: [a-zA-Z_] [a-zA-Z_0-9]*;
 
-WS : [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
+WS: [ \t\r\n]+ -> skip; // skip spaces, tabs, newlines
 
 // [\\]~[bfrnt'\\"] 
 ERROR_CHAR: . {raise ErrorToken(self.text)};
-UNCLOSE_STRING: '"' (~["] | '\\"')*? (NEWLINE | EOF) {
+UNCLOSE_STRING:
+	'"' (~["] | '\\"')*? (NEWLINE | EOF) {
 	raise UncloseString(self.text[1:])
 };
-ILLEGAL_ESCAPE: '"' (~["] | '\\"')* [\\]~[bfrnt'\\"] {
+ILLEGAL_ESCAPE:
+	'"' (~["] | '\\"')* [\\]~[bfrnt'\\"] {
 	raise IllegalEscape(self.text[1:]) 
 };

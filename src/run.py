@@ -34,8 +34,17 @@ def main(argv):
         elif argv[1] == 'ParserSuite':
             from ParserSuite import ParserSuite
             getAndTest(ParserSuite)
+        elif argv[1] == 'repl':
+            while True:
+                from TestUtils import TestParser
+                str = raw_input()
+                TestParser.check(str)
         else:
-            printUsage()
+            while True:
+                from TestUtils import TestParser
+                str = input()
+                TestParser.check(str)
+            # printUsage()
     else:
         printUsage()
 
@@ -44,6 +53,16 @@ def getAndTest(cls):
     suite = unittest.makeSuite(cls)
     test(suite)
 
+
+def raw_input():
+    contents = []
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            break
+        contents.append(line)
+    return '\n'.join(contents)
 
 def test(suite):
     from pprint import pprint

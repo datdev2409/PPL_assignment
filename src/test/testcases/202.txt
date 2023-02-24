@@ -1,1 +1,1 @@
-a, b, c: integer = expr,expr,expr
+a, b, c: integer = 2+4*3,2,3;

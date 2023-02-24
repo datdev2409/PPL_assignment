@@ -1,0 +1,4 @@
+x: integer = 65; 
+            fact: function integer (n: integer) {
+            }
+        
