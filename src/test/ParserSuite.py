@@ -42,4 +42,10 @@ class ParserSuite(unittest.TestCase):
         input = """true"""
         expect = "successful"
         self.assertTrue(TestParser.test(input, expect, 207))
+    
+    # Test statement
+    def test_assignment_statement(self):
+        input = """a = 10 + 20 * 30;"""
+        expect = "successful"
+        self.assertTrue(TestParser.test(input, expect, 208))
 

@@ -43,7 +43,7 @@ def main(argv):
             while True:
                 from TestUtils import TestParser
                 str = input()
-                TestParser.check(str)
+                TestParser.customCheck(str)
             # printUsage()
     else:
         printUsage()

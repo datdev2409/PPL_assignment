@@ -132,23 +132,8 @@ class TestParser:
         
         return str(token_names)
     
-    @staticmethod 
-    def getParseTree(input_string):
-        lexer = Lexer(InputStream(input_string))
-        token_stream = CommonTokenStream(lexer)
-        parser = Parser(token_stream)
-        parse_tree = parser.program()
-
-        for node in BFSIterator(parse_tree):
-            if isinstance(node, TerminalNode):
-                print(f"Visiting terminal {node.getText()}")
-            else:
-                rule_name = parser.ruleNames[node.getRuleIndex()]
-                print(f"Entering rule {rule_name}")
-                print(Tree.fromRuleContext(Parser, parse_tree))
-    
     @staticmethod
-    def check(input):
+    def customCheck(input):
         lexer = Lexer(InputStream(input))
         listener = TestParser.createErrorListener()
         tokens = CommonTokenStream(lexer)

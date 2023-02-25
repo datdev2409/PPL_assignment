@@ -10,18 +10,91 @@ options {
 
 program: statement* EOF;
 
-statement:
-	varDeclStmt
-	| funcDeclStmt
-	| expr SEMI_COLON // use for testing purpose only
-	| TRUE;
+// --- DECLARATION
+declaration: variable_decl | function_decl;
+type_decl:
+	BOOLEAN
+	| INTEGER
+	| FLOAT
+	| STRING
+	| ARRAY
+	| VOID
+	| AUTO;
+id_list: ID (COMMA ID)*;
+variable_decl: id_list COLON type_decl (ASSIGN expr (COMMA expr)*)? SEMI_COLON;
 
-listID: ID (COMMA ID)*;
-varDeclStmt:
+param_decl: INHERIT? OUT? ID COLON type_decl;
+function_decl: 	ID ':' FUNCTION type_decl LRB param_decl RRB (INHERIT ID)? block_stat;
+
+
+// -- EXPRESSION --
+expr:
+	int_expr
+	| number_expr
+	| bool_expr
+	| string_expr
+	| index_operator_expr
+	| function_call;
+
+int_expr:
+	LRB int_expr RRB
+	| int_expr MOD int_expr
+	| INT_LIT
+	| ID;
+
+number_expr:
+	LRB number_expr RRB
+	| <assoc = right> SUBTRACT number_expr
+	| <assoc = right> number_expr DIV number_expr
+	| number_expr MUL number_expr
+	| number_expr SUBTRACT number_expr
+	| number_expr ADD number_expr
+	| INT_LIT
+	| FLOAT_LIT
+	| ID;
+
+bool_expr:
+	LRB bool_expr RRB
+	| <assoc = right> NEG bool_expr
+	| bool_expr (AND | OR) bool_expr
+	| number_expr (LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) number_expr
+	| int_expr (EQUAL | DIFF) int_expr
+	| bool_expr (EQUAL | DIFF) bool_expr
+	| BOOL_LIT
+	| ID;
+
+string_expr: string_expr CONCAT string_expr | STRING_LIT | ID;
+
+index_list: number_expr (COMMA number_expr)*;
+index_operator_expr: ID LSB index_list RSB;
+
+function_call: ID LRB (expr (COMMA expr)*)? RRB;
+
+// --- STATEMENT ---
+statement: 
+		assignment_stat
+		| if_stat 
+		| for_stat 
+		| white_stat;
+
+var_declaration_stat:
 	listID COLON typeDecl (ASSIGN expr (COMMA expr)*)? SEMI_COLON;
-funcDeclStmt:
-	ID ':' FUNCTION typeDecl LRB listParamDecl RRB blockStmt;
-blockStmt: LCB statement* RCB;
+listID: ID (COMMA ID)*;
+
+func_declaration_stat:
+	ID ':' FUNCTION typeDecl LRB listParamDecl RRB block_stat;
+
+assignment_stat: ID ASSIGN expr SEMI_COLON;
+if_stat: IF LRB expr RRB statement (ELSE statement)?;
+for_stat:
+	FOR LRB ID ASSIGN int_expr COMMA bool_expr COMMA expr RRB statement;
+white_stat: WHILE LRB bool_expr RRB statement;
+do_while_stat: DO block_stat WHILE LRB bool_expr RRB SEMI_COLON;
+break_stat: BREAK SEMI_COLON;
+continue_stat: CONTINUE SEMI_COLON;
+return_stat: RETURN expr? SEMI_COLON;
+call_stat: function_call SEMI_COLON;
+block_stat: LCB statement* RCB;
 
 listParamDecl: (paramDecl (COMMA paramDecl)*)?;
 paramDecl: INHERIT? OUT? ID ':' typeDecl;
@@ -34,47 +107,24 @@ typeDecl:
 	| VOID
 	| AUTO;
 
-// -- EXPRESSION --
-expr:
-	int_expr
-	| number_expr
-	| bool_expr
-	| string_expr
-	| index_operator_expr;
+// --- SPECIAL FUNCTIONS
+read_integer_func: 'readInteger()';
+print_integer_func: 'readInteger()';
+read_float_func: 'readInteger()';
+write_float_func: 'readInteger()';
+read_boolean_func: 'readInteger()';
+print_boolean_func: 'readInteger()';
+read_string_func: 'readString';
+print_string_func: 'readString';
+super_func_func: 'readString';
+prevent_default_func: 'readString';
 
-int_expr: LRB int_expr RRB | int_expr MOD int_expr | INT_LIT | ID;
-
-number_expr:
-	LRB number_expr RRB
-	| <assoc = right> number_expr DIV number_expr
-	| number_expr MUL number_expr
-	| number_expr SUBTRACT number_expr
-	| number_expr ADD number_expr
-	| INT_LIT
-	| FLOAT_LIT
-	| ID;
-
-bool_expr:
-	LRB bool_expr RRB
-	| NEG bool_expr
-	| bool_expr (AND | OR) bool_expr
-	| number_expr (LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) number_expr
-	| int_expr (EQUAL | DIFF) int_expr
-	| bool_expr (EQUAL | DIFF) bool_expr
-	| BOOL_LIT
-	| ID
-	;
-
-string_expr: string_expr CONCAT string_expr | STRING_LIT | ID;
-
-index_list: number_expr (COMMA number_expr)*;
-index_operator_expr: ID LSB index_list RSB;
-
+// Lexer
 // --- COMMENT ---
 C_COMMENT: '/*' (.)*? '*/' -> skip;
 CPP_COMMENT: '//' ~[\r\n]* -> skip;
 
-// Lexer --- KEYWORD ---
+// --- KEYWORD ---
 AUTO: 'auto';
 BREAK: 'break';
 FALSE: 'false';
@@ -144,8 +194,6 @@ FLOAT_LIT: (
 fragment DIGIT: [0-9];
 fragment DECIMAL_PART: '.' DIGIT*;
 fragment EXP_PART: [eE] [+-]? DIGIT+;
-
-// It will never match this token, it match TRUE, FALSE keyword above
 BOOL_LIT: (TRUE | FALSE);
 
 fragment NEWLINE: '\r'? '\n';
