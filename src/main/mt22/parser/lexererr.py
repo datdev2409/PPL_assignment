@@ -1,6 +1,5 @@
 from abc import ABC
 
-
 class LexerError(ABC, Exception):
     pass
 

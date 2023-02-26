@@ -1,4 +1,4 @@
-# Generated from /Users/congdat/Desktop/PPL_assignment/src/main/mt22/parser/MT22.g4 by ANTLR 4.9.2
+# Generated from /Users/congdat/Desktop/PPL_assignment/src/main/mt22/parser/A.g4 by ANTLR 4.9.2
 from antlr4 import *
 from io import StringIO
 import sys
@@ -296,7 +296,7 @@ def serializedATN():
         return buf.getvalue()
 
 
-class MT22Lexer(Lexer):
+class MyGrammarLexer(Lexer):
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
@@ -412,7 +412,7 @@ class MT22Lexer(Lexer):
                   "ARRAY_LIT", "ID", "WS", "ERROR_CHAR", "UNCLOSE_STRING", 
                   "ILLEGAL_ESCAPE" ]
 
-    grammarFileName = "MT22.g4"
+    grammarFileName = "A.g4"
 
     def __init__(self, input=None, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -464,11 +464,7 @@ class MT22Lexer(Lexer):
     def UNCLOSE_STRING_action(self, localctx:RuleContext , actionIndex:int):
         if actionIndex == 4:
 
-            	string_error = self.text[1:]
-            	if (string_error[-1] == "\n"):
-            		raise UncloseString(self.text[1:-1])
-            	else:
-            		raise UncloseString(self.text[1:])
+            	raise UncloseString(self.text[1:])
 
      
 

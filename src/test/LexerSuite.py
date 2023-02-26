@@ -54,6 +54,9 @@ class LexerSuite(unittest.TestCase):
     def test_string_lit3(self):
         self.assertTrue(TestLexer.test('"This is a unclosed string\nhello world', 'Unclosed String: This is a unclosed string', 116))
 
+    def test_string_lit4(self):
+        self.assertTrue(TestLexer.test('"This is a unclosed string', 'Unclosed String: This is a unclosed string', 116))
+
     def test_array_lit(self):
         self.assertTrue(TestLexer.test("{1, 5, 7, 12}", "{1, 5, 7, 12},<EOF>", 117))
     

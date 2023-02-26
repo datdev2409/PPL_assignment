@@ -20,12 +20,22 @@ type_decl:
 	| ARRAY
 	| VOID
 	| AUTO;
+
 id_list: ID (COMMA ID)*;
-variable_decl: id_list COLON type_decl (ASSIGN expr (COMMA expr)*)? SEMI_COLON;
+expr_list: expr (COMMA expr)*;
+
+variable_decl: variable_decl_short | variable_decl_long SEMI_COLON;
+
+variable_decl_short: id_list COLON type_decl SEMI_COLON;
+variable_decl_long: ID COMMA variable_decl_long COMMA expr | sub_variable_decl;
+sub_variable_decl: ID COLON type_decl ASSIGN expr;
 
 param_decl: INHERIT? OUT? ID COLON type_decl;
-function_decl: 	ID ':' FUNCTION type_decl LRB param_decl RRB (INHERIT ID)? block_stat;
-
+param_decl_list: (param_decl (COMMA param_decl)*)?;
+function_decl:
+	ID COLON FUNCTION type_decl LRB param_decl_list RRB (
+		INHERIT ID
+	)? block_stat;
 
 // -- EXPRESSION --
 expr:
@@ -40,17 +50,21 @@ int_expr:
 	LRB int_expr RRB
 	| int_expr MOD int_expr
 	| INT_LIT
+	| function_call
 	| ID;
 
 number_expr:
-	LRB number_expr RRB
+	<assoc = right> SUBTRACT number_expr
+	| LRB number_expr RRB
 	| <assoc = right> SUBTRACT number_expr
 	| <assoc = right> number_expr DIV number_expr
+	| int_expr
 	| number_expr MUL number_expr
 	| number_expr SUBTRACT number_expr
 	| number_expr ADD number_expr
 	| INT_LIT
 	| FLOAT_LIT
+	| function_call
 	| ID;
 
 bool_expr:
@@ -60,7 +74,8 @@ bool_expr:
 	| number_expr (LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) number_expr
 	| int_expr (EQUAL | DIFF) int_expr
 	| bool_expr (EQUAL | DIFF) bool_expr
-	| BOOL_LIT
+	| (TRUE | FALSE)
+	| function_call
 	| ID;
 
 string_expr: string_expr CONCAT string_expr | STRING_LIT | ID;
@@ -71,56 +86,66 @@ index_operator_expr: ID LSB index_list RSB;
 function_call: ID LRB (expr (COMMA expr)*)? RRB;
 
 // --- STATEMENT ---
-statement: 
-		assignment_stat
-		| if_stat 
-		| for_stat 
-		| white_stat;
-
-var_declaration_stat:
-	listID COLON typeDecl (ASSIGN expr (COMMA expr)*)? SEMI_COLON;
-listID: ID (COMMA ID)*;
-
-func_declaration_stat:
-	ID ':' FUNCTION typeDecl LRB listParamDecl RRB block_stat;
+statement:
+	assignment_stat
+	| if_stat
+	| for_stat
+	| white_stat
+	| do_while_stat
+	| break_stat
+	| continue_stat
+	| return_stat
+	| call_stat
+	| block_stat
+	| declaration
+	| expr SEMI_COLON;
 
 assignment_stat: ID ASSIGN expr SEMI_COLON;
+
 if_stat: IF LRB expr RRB statement (ELSE statement)?;
+
 for_stat:
 	FOR LRB ID ASSIGN int_expr COMMA bool_expr COMMA expr RRB statement;
+
 white_stat: WHILE LRB bool_expr RRB statement;
+
 do_while_stat: DO block_stat WHILE LRB bool_expr RRB SEMI_COLON;
+
 break_stat: BREAK SEMI_COLON;
+
 continue_stat: CONTINUE SEMI_COLON;
+
 return_stat: RETURN expr? SEMI_COLON;
-call_stat: function_call SEMI_COLON;
+
+call_stat: (special_func | function_call) SEMI_COLON;
+
 block_stat: LCB statement* RCB;
 
-listParamDecl: (paramDecl (COMMA paramDecl)*)?;
-paramDecl: INHERIT? OUT? ID ':' typeDecl;
-typeDecl:
-	BOOLEAN
-	| INTEGER
-	| FLOAT
-	| STRING
-	| ARRAY
-	| VOID
-	| AUTO;
-
 // --- SPECIAL FUNCTIONS
-read_integer_func: 'readInteger()';
-print_integer_func: 'readInteger()';
-read_float_func: 'readInteger()';
-write_float_func: 'readInteger()';
-read_boolean_func: 'readInteger()';
-print_boolean_func: 'readInteger()';
-read_string_func: 'readString';
-print_string_func: 'readString';
-super_func_func: 'readString';
-prevent_default_func: 'readString';
+special_func:
+	read_integer_func
+	| print_integer_func
+	| read_float_func
+	| write_float_func
+	| read_boolean_func
+	| print_boolean_func
+	| read_string_func
+	| print_string_func
+	| super_func
+	| prevent_default_func;
 
-// Lexer
-// --- COMMENT ---
+read_integer_func: 'readInteger' LRB RRB;
+print_integer_func: 'printInteger' LRB int_expr RRB;
+read_float_func: 'readFloat' LRB RRB;
+write_float_func: 'writeFloat' LRB number_expr RRB;
+read_boolean_func: 'readBoolean' LRB RRB;
+print_boolean_func: 'printBoolean' LRB bool_expr RRB;
+read_string_func: 'readString' LRB RRB;
+print_string_func: 'printString' LRB string_expr RRB;
+super_func: 'super' LRB expr* RRB;
+prevent_default_func: 'preventDefault' LRB RRB;
+
+// Lexer --- COMMENT ---
 C_COMMENT: '/*' (.)*? '*/' -> skip;
 CPP_COMMENT: '//' ~[\r\n]* -> skip;
 
@@ -223,7 +248,11 @@ WS: [ \t\r\n]+ -> skip; // skip spaces, tabs, newlines
 ERROR_CHAR: . {raise ErrorToken(self.text)};
 UNCLOSE_STRING:
 	'"' (~["] | '\\"')*? (NEWLINE | EOF) {
-	raise UncloseString(self.text[1:])
+	string_error = self.text[1:]
+	if (string_error[-1] == "\n"):
+		raise UncloseString(self.text[1:-1])
+	else:
+		raise UncloseString(self.text[1:])
 };
 ILLEGAL_ESCAPE:
 	'"' (~["] | '\\"')* [\\]~[bfrnt'\\"] {
