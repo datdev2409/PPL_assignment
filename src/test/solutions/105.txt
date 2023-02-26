@@ -1,1 +1,1 @@
-auto,<EOF>
+uABCAu,<EOF>

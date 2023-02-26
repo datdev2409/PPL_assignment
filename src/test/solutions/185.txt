@@ -1,0 +1,1 @@
+foo,:,function,void,(,a,:,integer,,,out,x,:,float,),inherit,bar,{,},<EOF>

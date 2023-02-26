@@ -1,1 +1,3 @@
-true;
+main: function void () {
+            true;
+            }

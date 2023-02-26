@@ -8,30 +8,33 @@ options {
 	language = Python3;
 }
 
-program: statement* EOF;
+program: declaration+ EOF;
 
 // --- DECLARATION
 declaration: variable_decl | function_decl;
-type_decl:
-	BOOLEAN
-	| INTEGER
-	| FLOAT
-	| STRING
-	| ARRAY
-	| VOID
-	| AUTO;
+
+element_type: BOOLEAN | INTEGER | FLOAT | STRING;
+array_type:
+	'array' LSB INT_LIT (COMMA INT_LIT)* RSB OF element_type;
+
+type_decl: element_type | array_type | VOID | AUTO;
 
 id_list: ID (COMMA ID)*;
 expr_list: expr (COMMA expr)*;
 
-variable_decl: variable_decl_short | variable_decl_long SEMI_COLON;
+variable_decl:
+	variable_decl_short
+	| variable_decl_long SEMI_COLON;
 
 variable_decl_short: id_list COLON type_decl SEMI_COLON;
-variable_decl_long: ID COMMA variable_decl_long COMMA expr | sub_variable_decl;
+variable_decl_long:
+	ID COMMA variable_decl_long COMMA expr
+	| sub_variable_decl;
 sub_variable_decl: ID COLON type_decl ASSIGN expr;
 
-param_decl: INHERIT? OUT? ID COLON type_decl;
+param_decl: INHERIT? OUT? ID COLON (element_type | array_type | AUTO);
 param_decl_list: (param_decl (COMMA param_decl)*)?;
+
 function_decl:
 	ID COLON FUNCTION type_decl LRB param_decl_list RRB (
 		INHERIT ID
@@ -44,19 +47,22 @@ expr:
 	| bool_expr
 	| string_expr
 	| index_operator_expr
-	| function_call;
+	| function_call
+	| ARRAY_LIT;
 
 int_expr:
 	LRB int_expr RRB
-	| int_expr MOD int_expr
+	| <assoc = right> SUBTRACT int_expr
+	| int_expr (MOD | MUL | DIV) int_expr
+	| int_expr (ADD | SUBTRACT) int_expr
 	| INT_LIT
 	| function_call
+	| index_operator_expr
 	| ID;
 
 number_expr:
 	<assoc = right> SUBTRACT number_expr
 	| LRB number_expr RRB
-	| <assoc = right> SUBTRACT number_expr
 	| <assoc = right> number_expr DIV number_expr
 	| int_expr
 	| number_expr MUL number_expr
@@ -65,6 +71,7 @@ number_expr:
 	| INT_LIT
 	| FLOAT_LIT
 	| function_call
+	| index_operator_expr
 	| ID;
 
 bool_expr:
@@ -76,9 +83,15 @@ bool_expr:
 	| bool_expr (EQUAL | DIFF) bool_expr
 	| (TRUE | FALSE)
 	| function_call
+	| index_operator_expr
 	| ID;
 
-string_expr: string_expr CONCAT string_expr | STRING_LIT | ID;
+string_expr:
+	string_expr CONCAT string_expr
+	| STRING_LIT
+	| ID
+	| function_call
+	| index_operator_expr;
 
 index_list: number_expr (COMMA number_expr)*;
 index_operator_expr: ID LSB index_list RSB;
@@ -100,12 +113,12 @@ statement:
 	| declaration
 	| expr SEMI_COLON;
 
-assignment_stat: ID ASSIGN expr SEMI_COLON;
+assignment_stat: (ID | index_operator_expr) ASSIGN expr SEMI_COLON;
 
-if_stat: IF LRB expr RRB statement (ELSE statement)?;
+if_stat: IF LRB bool_expr RRB statement (ELSE statement)?;
 
 for_stat:
-	FOR LRB ID ASSIGN int_expr COMMA bool_expr COMMA expr RRB statement;
+	FOR LRB ID ASSIGN int_expr COMMA bool_expr COMMA int_expr RRB statement;
 
 white_stat: WHILE LRB bool_expr RRB statement;
 
@@ -208,7 +221,7 @@ ASSIGN: '=';
 // --- LITERALS ---
 INT_LIT:
 	'0'
-	| [1-9][0-9_]* {self.text = self.text.replace("_", "")};
+	| [1-9] [0-9]* ('_' [0-9]+)* {self.text = self.text.replace("_", "")};
 
 // Consider case: without INT_LIT
 FLOAT_LIT: (
@@ -233,11 +246,11 @@ fragment ESCAPE:
 	| '\\"';
 STRING_LIT:
 	'"' (ESCAPE | ~["\\])* '"' {
-	self.text = self.text[1:-1].replace("\\", "")
+	self.text = self.text[1:-1]
 };
 
-fragment EXPR: INT_LIT | FLOAT_LIT | BOOL_LIT | STRING_LIT;
-ARRAY_LIT: '{' EXPR (',' ' '* EXPR ' '*)* '}';
+fragment EXPR: STRING_LIT | INT_LIT | FLOAT_LIT | BOOL_LIT | ARRAY_LIT;
+ARRAY_LIT: '{' EXPR (COMMA EXPR )* '}';
 
 // --- INDENTIFIER ---
 ID: [a-zA-Z_] [a-zA-Z_0-9]*;
@@ -246,15 +259,15 @@ WS: [ \t\r\n]+ -> skip; // skip spaces, tabs, newlines
 
 // [\\]~[bfrnt'\\"] 
 ERROR_CHAR: . {raise ErrorToken(self.text)};
+ILLEGAL_ESCAPE:
+	'"' (~["] | '\\"')* ([\\]~[bfrnt'\\"]) {
+	raise IllegalEscape(self.text[1:]) 
+};
 UNCLOSE_STRING:
-	'"' (~["] | '\\"')*? (NEWLINE | EOF) {
+	'"' (~["\\] | '\\"' | ESCAPE)*? (NEWLINE | EOF) {
 	string_error = self.text[1:]
 	if (string_error[-1] == "\n"):
 		raise UncloseString(self.text[1:-1])
 	else:
 		raise UncloseString(self.text[1:])
-};
-ILLEGAL_ESCAPE:
-	'"' (~["] | '\\"')* [\\]~[bfrnt'\\"] {
-	raise IllegalEscape(self.text[1:]) 
 };

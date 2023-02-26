@@ -1,0 +1,8 @@
+main: function void () {
+            do
+            {
+                a = 10;
+                a = 20;
+            }
+            while(true);
+            }

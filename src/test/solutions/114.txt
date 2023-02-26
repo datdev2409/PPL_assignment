@@ -1,1 +1,1 @@
-He asked me: "Where is John?",<EOF>
+_N_Z_123,<EOF>

@@ -1,1 +1,1 @@
-"This \c is a string containing tab 	"
+abc#abc
