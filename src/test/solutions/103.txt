@@ -1,1 +1,1 @@
-ABCBA,<EOF>
+A1,<EOF>
