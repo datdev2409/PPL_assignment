@@ -1,0 +1,7 @@
+target/
+src/test/solutions/
+src/test/testcases/
+# src/test/__pycache__/
+**/**/__pycache__/
+**/**/.antlr/
+**/**/.DS_Store
