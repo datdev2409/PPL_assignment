@@ -8,156 +8,123 @@ options {
 	language = Python3;
 }
 
-program: declaration+ EOF;
+program: decl+ EOF;
+
+// TYPE
+mttype: valueType | voidType;
+valueType: atomicType | arrayType | autoType;
+
+atomicType: BOOLEAN | INTEGER | FLOAT | STRING;
+
+dimens: LSB INTLIT (CM INTLIT)* RSB;
+arrayType: ARRAY dimens OF atomicType;
+
+voidType: VOID;
+autoType: AUTO;
+
+// DECLARATION
+decl: varDecl | funcDecl;
 
 
-// --- DECLARATION
-declaration: variable_decl | function_decl;
+// VARIABLE DECLARATION
+varDecl: varDeclShort | varDeclFull SC;
 
-element_type: BOOLEAN | INTEGER | FLOAT | STRING;
-array_type:
-	'array' LSB INT_LIT (COMMA INT_LIT)* RSB OF element_type;
+varDeclShort: ID (CM ID)* COLON valueType SC;
 
-type_decl: element_type | array_type | VOID | AUTO;
+varDeclFull: ID CM varDeclFull CM exp | ID COLON valueType ASSIGN exp;
 
-id_list: ID (COMMA ID)*;
-expr_list: expr (COMMA expr)*;
 
-variable_decl:
-	variable_decl_short
-	| variable_decl_long SEMI_COLON;
+// FUNCTION DECLARATION
+paramDecl: INHERIT? OUT? ID COLON valueType;
+paramDecls: paramDecl (CM paramDecl)*;
 
-variable_decl_short: id_list COLON type_decl SEMI_COLON;
-variable_decl_long:
-	ID COMMA variable_decl_long COMMA expr
-	| sub_variable_decl;
-sub_variable_decl: ID COLON type_decl ASSIGN expr;
+funcDecl: ID COLON FUNCTION mttype LRB paramDecls? RRB (INHERIT ID)? blockStmt;
 
-param_decl: INHERIT? OUT? ID COLON (element_type | array_type | AUTO);
-param_decl_list: (param_decl (COMMA param_decl)*)?;
 
-function_decl:
-	ID COLON FUNCTION type_decl LRB param_decl_list RRB (
-		INHERIT ID
-	)? block_stat;
+// LITERAL
+literal: INTLIT | BOOLLIT | STRINGLIT | FLOATLIT | arraylit;
+arraylit: LCB explist? RCB;
 
-// -- EXPRESSION --
-expr:
-	int_expr
-	| number_expr
-	| bool_expr
-	| string_expr
-	| index_operator_expr
-	| function_call
-	| ARRAY_LIT;
+explist: exp (CM exp)*;
 
-int_expr:
-	LRB int_expr RRB
-	| <assoc = right> SUBTRACT int_expr
-	| int_expr (MOD | MUL | DIV) int_expr
-	| int_expr (ADD | SUBTRACT) int_expr
-	| INT_LIT
-	| function_call
-	| index_operator_expr
-	| ID;
+// EXPRESSION --
+arrayCell: ID LSB explist RSB;
+funcCall: ID LRB explist? RRB;
 
-number_expr:
-	<assoc = right> SUBTRACT number_expr
-	| LRB number_expr RRB
-	| <assoc = right> number_expr DIV number_expr
-	| int_expr
-	| number_expr MUL number_expr
-	| number_expr SUBTRACT number_expr
-	| number_expr ADD number_expr
-	| INT_LIT
-	| FLOAT_LIT
-	| function_call
-	| index_operator_expr
-	| ID;
+exp: exp1 CONCAT exp1 | exp1;
+exp1: exp2 (EQUAL|DIFF|LESS|GREATER|LESSEQUAL|GREATEREQUAL) exp2 | exp2;
+exp2: exp2 (AND | OR) exp3 | exp3;
+exp3: exp3 (ADD | SUBTRACT) exp4 | exp4;
+exp4: exp4 (MUL | DIV | MOD) exp5 | exp5;
+exp5: NEG exp5 | exp6;
+exp6: SUBTRACT exp6| exp7;
+exp7: funcCall | arrayCell | operands | LRB exp RRB;
 
-bool_expr:
-	LRB bool_expr RRB
-	| <assoc = right> NEG bool_expr
-	| bool_expr (AND | OR) bool_expr
-	| number_expr (LESS | GREATER | LESS_EQUAL | GREATER_EQUAL) number_expr
-	| int_expr (EQUAL | DIFF) int_expr
-	| bool_expr (EQUAL | DIFF) bool_expr
-	| (TRUE | FALSE)
-	| function_call
-	| index_operator_expr
-	| ID;
-
-string_expr:
-	string_expr CONCAT string_expr
-	| STRING_LIT
-	| ID
-	| function_call
-	| index_operator_expr;
-
-index_list: number_expr (COMMA number_expr)*;
-index_operator_expr: ID LSB index_list RSB;
-
-function_call: ID LRB (expr (COMMA expr)*)? RRB;
+operands: literal | ID;
 
 // --- STATEMENT ---
-statement:
-	assignment_stat
-	| if_stat
-	| for_stat
-	| white_stat
-	| do_while_stat
-	| break_stat
-	| continue_stat
-	| return_stat
-	| call_stat
-	| block_stat
-	| declaration
-	| expr SEMI_COLON;
+stmt:
+	assignStmt SC
+	| ifStmt
+	| forStmt
+	| whileStmt
+	| doWhileStmt
+	| breakStmt
+	| contStmt
+	| returnStmt
+	| callStmt
+	| blockStmt;
 
-assignment_stat: (ID | index_operator_expr) ASSIGN expr SEMI_COLON;
+assignStmt: (ID | arrayCell) ASSIGN exp;
 
-if_stat: IF LRB bool_expr RRB statement (ELSE statement)?;
+ifStmt: IF LRB exp RRB stmt (ELSE stmt)?;
 
-for_stat:
-	FOR LRB ID ASSIGN int_expr COMMA bool_expr COMMA int_expr RRB statement;
+callStmt: funcCall SC;
 
-white_stat: WHILE LRB bool_expr RRB statement;
+forStmt: FOR LRB assignStmt CM exp CM exp RRB stmt;
 
-do_while_stat: DO block_stat WHILE LRB bool_expr RRB SEMI_COLON;
+whileStmt: WHILE LRB exp RRB stmt;
 
-break_stat: BREAK SEMI_COLON;
+doWhileStmt: DO blockStmt WHILE LRB exp RRB SC;
 
-continue_stat: CONTINUE SEMI_COLON;
+breakStmt: BREAK SC;
 
-return_stat: RETURN expr? SEMI_COLON;
+contStmt: CONTINUE SC;
 
-call_stat: (special_func | function_call) SEMI_COLON;
+returnStmt: RETURN exp? SC;
 
-block_stat: LCB statement* RCB;
+body: stmt body | varDecl body | ;
+blockStmt: LCB body RCB;
 
-// --- SPECIAL FUNCTIONS
-special_func:
-	read_integer_func
-	| print_integer_func
-	| read_float_func
-	| write_float_func
-	| read_boolean_func
-	| print_boolean_func
-	| read_string_func
-	| print_string_func
-	| super_func
-	| prevent_default_func;
+// --- LITERALS ---
+INTLIT: '0' | [1-9] DIGIT* ('_' DIGIT+)* {
+	self.text = self.text.replace("_", "")
+};
 
-read_integer_func: 'readInteger' LRB RRB;
-print_integer_func: 'printInteger' LRB int_expr RRB;
-read_float_func: 'readFloat' LRB RRB;
-write_float_func: 'writeFloat' LRB number_expr RRB;
-read_boolean_func: 'readBoolean' LRB RRB;
-print_boolean_func: 'printBoolean' LRB bool_expr RRB;
-read_string_func: 'readString' LRB RRB;
-print_string_func: 'printString' LRB string_expr RRB;
-super_func: 'super' LRB expr* RRB;
-prevent_default_func: 'preventDefault' LRB RRB;
+// Consider case: without INT_LIT
+FLOATLIT: (INTLIT DECIMAL? EXP | INTLIT DECIMAL | DECIMAL EXP) {
+	self.text = self.text.replace("_", "")
+};
+fragment DIGIT: [0-9];
+fragment DECIMAL: '.' DIGIT*;
+fragment EXP: [eE] [+-]? DIGIT+;
+
+BOOLLIT: TRUE | FALSE;
+
+fragment NEWLINE: '\r'? '\n';
+fragment ESCAPE:
+	'\\b'
+	| '\\f'
+	| '\\r'
+	| '\\n'
+	| '\\t'
+	| '\\\''
+	| '\\\\'
+	| '\\"';
+STRINGLIT: '"' (ESCAPE | ~["\\])* '"' {
+	self.text = self.text[1:-1]
+};
+
 
 // Lexer --- COMMENT ---
 C_COMMENT: '/*' (.)*? '*/' -> skip;
@@ -200,9 +167,9 @@ OR: '||';
 EQUAL: '==';
 DIFF: '!=';
 LESS: '<';
-LESS_EQUAL: '<=';
+LESSEQUAL: '<=';
 GREATER: '>';
-GREATER_EQUAL: '>=';
+GREATEREQUAL: '>=';
 
 CONCAT: '::';
 
@@ -212,53 +179,19 @@ RRB: ')';
 LSB: '[';
 RSB: ']';
 DOT: '.';
-COMMA: ',';
-SEMI_COLON: ';';
+CM: ',';
+SC: ';';
 COLON: ':';
 LCB: '{';
 RCB: '}';
 ASSIGN: '=';
 
-// --- LITERALS ---
-INT_LIT:
-	'0'
-	| [1-9] [0-9]* ('_' [0-9]+)* {self.text = self.text.replace("_", "")};
-
-// Consider case: without INT_LIT
-FLOAT_LIT: (
-		INT_LIT DECIMAL_PART? EXP_PART
-		| INT_LIT DECIMAL_PART
-		| DECIMAL_PART EXP_PART
-	) {self.text = self.text.replace("_", "")};
-fragment DIGIT: [0-9];
-fragment DECIMAL_PART: '.' DIGIT*;
-fragment EXP_PART: [eE] [+-]? DIGIT+;
-BOOL_LIT: (TRUE | FALSE);
-
-fragment NEWLINE: '\r'? '\n';
-fragment ESCAPE:
-	'\\b'
-	| '\\f'
-	| '\\r'
-	| '\\n'
-	| '\\t'
-	| '\\\''
-	| '\\\\'
-	| '\\"';
-STRING_LIT:
-	'"' (ESCAPE | ~["\\])* '"' {
-	self.text = self.text[1:-1]
-};
-
-fragment EXPR: STRING_LIT | INT_LIT | FLOAT_LIT | BOOL_LIT | ARRAY_LIT;
-ARRAY_LIT: '{' EXPR (COMMA EXPR )* '}';
 
 // --- INDENTIFIER ---
 ID: [a-zA-Z_] [a-zA-Z_0-9]*;
 
 WS: [ \t\r\n]+ -> skip; // skip spaces, tabs, newlines
 
-// [\\]~[bfrnt'\\"] 
 ERROR_CHAR: . {raise ErrorToken(self.text)};
 ILLEGAL_ESCAPE:
 	'"' (~["] | '\\"')* ([\\]~[bfrnt'\\"]) {

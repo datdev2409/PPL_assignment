@@ -12,10 +12,10 @@ class ASTGenSuite(unittest.TestCase):
     def test_full_vardecl(self):
         input = """x, y, z: integer = 1, 2, 3;"""
         expect = """Program([
-	VarDecl(x, IntegerType, IntegerLit(1))
-	VarDecl(y, IntegerType, IntegerLit(2))
-	VarDecl(z, IntegerType, IntegerLit(3))
-])"""
+            VarDecl(x, IntegerType, IntegerLit(1))
+            VarDecl(y, IntegerType, IntegerLit(2))
+            VarDecl(z, IntegerType, IntegerLit(3))
+        ])"""
         self.assertTrue(TestAST.test(input, expect, 301))
 
     def test_vardecls(self):

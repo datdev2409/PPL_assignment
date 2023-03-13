@@ -62,9 +62,9 @@ def test(suite):
     result = runner.run(suite)
     print('Tests run ', result.testsRun)
     print('Errors ', result.errors)
-    pprint(result.failures)
+    print('Fail: ' + str(len(result.failures)))
+    # pprint(result.failures)
     stream.seek(0)
-    print('Test output\n', stream.read())
 
 
 def printUsage():
