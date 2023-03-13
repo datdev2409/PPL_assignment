@@ -5,3 +5,5 @@ src/test/testcases/
 **/**/__pycache__/
 **/**/.antlr/
 **/**/.DS_Store
+.idea/
+.vscode
