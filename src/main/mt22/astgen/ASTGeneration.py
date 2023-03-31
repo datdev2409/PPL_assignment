@@ -74,10 +74,10 @@ class ASTGeneration(MT22Visitor):
         return self.visit(ctx.varDeclFull())
 
 
-    # varDeclShort: ID (CM ID)* COLON valueType SC;
+    # varDeclShort: ID (CM ID)* COLON mttype SC;
     def visitVarDeclShort(self, ctx:MT22Parser.VarDeclShortContext):
         ids = ctx.ID()
-        type = self.visit(ctx.valueType())
+        type = self.visit(ctx.mttype())
         return list(map(lambda id : VarDecl(id.getText(), type), ids))
 
 
@@ -88,7 +88,7 @@ class ASTGeneration(MT22Visitor):
     # a b c 2 1 0
     def visitVarDeclFull(self, ctx:MT22Parser.VarDeclFullContext):
         if ctx.ASSIGN() != None:
-            type = self.visit(ctx.valueType())
+            type = self.visit(ctx.mttype())
             exp = self.visit(ctx.exp())
             return [VarDecl(ctx.ID().getText(), type, exp)]
 
@@ -99,10 +99,10 @@ class ASTGeneration(MT22Visitor):
         return [VarDecl(ids[i], type, exps[i]) for i in range(len(ids))]
 
 
-    # paramDecl: INHERIT? OUT? ID COLON valueType;
+    # paramDecl: INHERIT? OUT? ID COLON mttype;
     def visitParamDecl(self, ctx:MT22Parser.ParamDeclContext):
         name = ctx.ID().getText()
-        type = self.visit(ctx.valueType())
+        type = self.visit(ctx.mttype())
         return ParamDecl(name, type, ctx.OUT() != None, ctx.INHERIT() != None)
 
 
@@ -127,9 +127,13 @@ class ASTGeneration(MT22Visitor):
         if ctx.INTLIT() != None:
             return IntegerLit(int(ctx.INTLIT().getText()))
         elif ctx.FLOATLIT() != None:
-            return FloatLit(ctx.FLOATLIT().getText())
+            val = ctx.FLOATLIT().getText()
+            if val[0] == ".":
+                val = "0" + val
+            return FloatLit(float(val))
         elif ctx.BOOLLIT() != None:
-            return BooleanLit(ctx.BOOLLIT().getText())
+            val = True if ctx.BOOLLIT().getText() == "true" else False
+            return BooleanLit(val)
         elif ctx.STRINGLIT() != None:
             return StringLit(ctx.STRINGLIT().getText())
         return self.visit(ctx.arraylit())
@@ -137,7 +141,8 @@ class ASTGeneration(MT22Visitor):
 
     # arraylit: LCB explist? RCB;
     def visitArraylit(self, ctx:MT22Parser.ArraylitContext):
-        return ArrayLit(self.visit(ctx.explist()))
+        explist = self.visit(ctx.explist()) if ctx.explist() != None else []
+        return ArrayLit(explist)
 
 
     # explist: exp (CM exp)*;
@@ -152,7 +157,8 @@ class ASTGeneration(MT22Visitor):
 
     # funcCall: ID LRB explist? RRB;
     def visitFuncCall(self, ctx:MT22Parser.FuncCallContext):
-        return FuncCall(ctx.ID().getText(), self.visit(ctx.explist()))
+        explist = self.visit(ctx.explist()) if ctx.explist() != None else []
+        return FuncCall(ctx.ID().getText(), explist)
 
 
     # exp: exp1 CONCAT exp1 | exp1;
@@ -220,8 +226,7 @@ class ASTGeneration(MT22Visitor):
             return UnExpr(op, self.visit(ctx.exp6()))
         return self.visit(ctx.exp7())
 
-
-    # Visit a parse tree produced by MT22Parser#exp7.
+    # exp7: funcCall | arrayCell | operands | LRB exp RRB;
     def visitExp7(self, ctx:MT22Parser.Exp7Context):
         if ctx.getChildCount() == 1:
             return self.visit(ctx.getChild(0))
@@ -232,7 +237,7 @@ class ASTGeneration(MT22Visitor):
     # operands: literal | ID;
     def visitOperands(self, ctx:MT22Parser.OperandsContext):
         if ctx.ID() != None:
-            return ctx.ID().getText()
+            return Id(ctx.ID().getText())
         return self.visit(ctx.literal())
 
 
@@ -243,7 +248,7 @@ class ASTGeneration(MT22Visitor):
 
     # assignStmt: (ID | arrayCell) ASSIGN exp SC;
     def visitAssignStmt(self, ctx:MT22Parser.AssignStmtContext):
-        lhs = ctx.ID().getText() if ctx.ID() != None else self.visit(ctx.arrayCell())
+        lhs = Id(ctx.ID().getText()) if ctx.ID() != None else self.visit(ctx.arrayCell())
         rhs = self.visit(ctx.exp())
         return AssignStmt(lhs, rhs)
 

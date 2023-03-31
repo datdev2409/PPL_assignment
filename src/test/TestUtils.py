@@ -39,6 +39,7 @@ class TestLexer:
         dest = open(SOL_DIR + str(num) + ".txt", "r")
         line = dest.read()
         if line != expect:
+            print(num)
             print("Input: " + input)
             print("Result: " + line)
             print("Expect: " + expect)
@@ -93,9 +94,12 @@ class TestParser:
         dest = open(SOL_DIR + str(num) + ".txt", "r")
         line = dest.read()
         if line != expect:
+            print("\n\n\n")
+            print(num)
             print("Input: " + input)
             print("Result: " + line)
             print("Expect: " + expect)
+            print("\n\n\n")
         return line == expect
 
     @staticmethod
@@ -126,9 +130,12 @@ class TestAST:
         dest = open(os.path.join(SOL_DIR, str(num) + ".txt"), "r")
         line = dest.read()
         if line != expect:
+            print("\n\n\n")
+            print(num)
             print("Input: " + input)
             print("Result: " + line)
             print("Expect: " + expect)
+            print("\n\n\n")
         return line == expect
 
     @staticmethod

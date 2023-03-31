@@ -29,13 +29,15 @@ decl: varDecl | funcDecl;
 // VARIABLE DECLARATION
 varDecl: varDeclShort | varDeclFull SC;
 
-varDeclShort: ID (CM ID)* COLON valueType SC;
+// varDeclShort: ID (CM ID)* COLON valueType SC;
+varDeclShort: ID (CM ID)* COLON mttype SC;
 
-varDeclFull: ID CM varDeclFull CM exp | ID COLON valueType ASSIGN exp;
+// varDeclFull: ID CM varDeclFull CM exp | ID COLON valueType ASSIGN exp;
+varDeclFull: ID CM varDeclFull CM exp | ID COLON mttype ASSIGN exp;
 
 
 // FUNCTION DECLARATION
-paramDecl: INHERIT? OUT? ID COLON valueType;
+paramDecl: INHERIT? OUT? ID COLON mttype;
 paramDecls: paramDecl (CM paramDecl)*;
 
 funcDecl: ID COLON FUNCTION mttype LRB paramDecls? RRB (INHERIT ID)? blockStmt;

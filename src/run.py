@@ -61,7 +61,7 @@ def test(suite):
     runner = unittest.TextTestRunner(stream=stream)
     result = runner.run(suite)
     print('Tests run ', result.testsRun)
-    print('Errors ', result.errors)
+    print('Errors ', "\n\n\n".join(map(lambda x : str(x), result.errors)))
     print('Fail: ' + str(len(result.failures)))
     # pprint(result.failures)
     stream.seek(0)
