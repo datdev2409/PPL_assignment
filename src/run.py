@@ -62,7 +62,7 @@ def test(suite):
     result = runner.run(suite)
     print('Tests run ', result.testsRun)
     print('Errors ', result.errors)
-    pprint(result.failures)
+    # pprint(result.failures)
     stream.seek(0)
     print('Test output\n', stream.read())
 
@@ -72,7 +72,7 @@ def printUsage():
     print("python3 run.py test LexerSuite")
     print("python3 run.py test ParserSuite")
     print("python3 run.py test ASTGenSuite")
-    # print("python3 run.py test CheckerSuite")
+    print("python3 run.py test CheckerSuite")
     # print("python3 run.py test CodeGenSuite")
 
 

@@ -1,0 +1,11 @@
+
+main: function void () {
+  b: integer = 1 
+  func: function void () {
+    a: integer = b
+  }
+}
+
+main: function void (a: integer) {
+  a: integer = 10
+}

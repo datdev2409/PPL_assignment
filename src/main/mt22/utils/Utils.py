@@ -5,3 +5,7 @@ class Utils:
             if name == func(x):
                 return x
         return None
+    
+    def compareType(obj, type):
+        return type(obj) is type
+    

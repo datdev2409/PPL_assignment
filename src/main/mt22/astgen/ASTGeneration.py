@@ -152,7 +152,7 @@ class ASTGeneration(MT22Visitor):
 
     # arrayCell: ID LSB explist RSB;
     def visitArrayCell(self, ctx:MT22Parser.ArrayCellContext):
-        return ArrayCell(self.ID().getText(), self.visit(ctx.explist()))
+        return ArrayCell(ctx.ID().getText(), self.visit(ctx.explist()))
 
 
     # funcCall: ID LRB explist? RRB;

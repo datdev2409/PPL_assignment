@@ -6,12 +6,16 @@ if not './main/mt22/parser/' in sys.path:
     sys.path.append('./main/mt22/parser/')
 if not './main/mt22/astgen/' in sys.path:
     sys.path.append('./main/mt22/astgen/')
+if not './main/mt22/checker/' in sys.path:
+    sys.path.append('./main/mt22/checker/')
 if os.path.isdir('../target/main/mt22/parser') and not '../target/main/mt22/parser/' in sys.path:
     sys.path.append('../target/main/mt22/parser/')
 from MT22Lexer import MT22Lexer
 from MT22Parser import MT22Parser
 from ASTGeneration import ASTGeneration
 from lexererr import *
+from StaticChecker import StaticChecker
+from StaticError import StaticError
 import subprocess
 
 JASMIN_JAR = "./external/jasmin.jar"
@@ -147,6 +151,13 @@ class TestChecker:
         TestChecker.check(SOL_DIR, asttree, num)
         dest = open(os.path.join(SOL_DIR, str(num) + ".txt"), "r")
         line = dest.read()
+        if line != expect:
+            print('\n\n\n')
+            print(num)
+            print("Input: " + input)
+            print("Result: " + line)
+            print("Expect: " + expect)
+            print('\n\n\n')
         return line == expect
 
     @staticmethod

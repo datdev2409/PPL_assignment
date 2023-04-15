@@ -2,7 +2,7 @@ from abc import ABC, ABCMeta
 
 
 class Visitor(ABC):
-
+    
     def visit(self, ast, param):
         return ast.accept(self, param)
 
