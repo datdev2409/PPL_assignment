@@ -132,6 +132,16 @@ main: function void () {
         expect = "Type mismatch in statement: AssignStmt(Id(a), UnExpr(!, BooleanLit(False)))"
         self.assertTrue(TestChecker.test(input, expect, 403))
 
+    def test_assign_stmt2(self):
+        input = """
+        a: integer;
+        foo: function integer() {}
+        main: function void () {
+            foo = 1;
+        }"""
+        expect = "Undeclared Identifier: foo"
+        self.assertTrue(TestChecker.test(input, expect, 403))
+
     def test_if_stmt(self):
         input = """
         a: integer;
@@ -162,3 +172,72 @@ main: function void () {
         }"""
         expect = "Type mismatch in statement: ForStmt(AssignStmt(Id(i), IntegerLit(1)), BinExpr(+, Id(i), IntegerLit(10)), BinExpr(+, Id(i), IntegerLit(1)), BlockStmt([VarDecl(a, BooleanType, BooleanLit(False)), IfStmt(Id(a), BlockStmt([VarDecl(c, IntegerType)]))]))"
         self.assertTrue(TestChecker.test(input, expect, 403))
+
+    def test_must_in_loop(self):
+        input = """
+        a: integer;
+        main: function void () {
+            i: integer;
+            for (i = 1, i < 10, i + 1) {
+                continue;
+                break;
+            }
+            break;
+        }"""
+        expect = "Must in loop: BreakStmt()"
+        self.assertTrue(TestChecker.test(input, expect, 403))
+
+    def test_return_stmt(self):
+        input = """
+        a: integer;
+        main: function void () {
+            i: integer;
+            for (i = 1, i < 10, i + 1) {
+                continue;
+                break;
+                return;
+            }
+        }"""
+        expect = "Must in loop: BreakStmt()"
+        self.assertTrue(TestChecker.test(input, expect, 403))
+
+    def test_call_stmt(self):
+        input = """
+        a: integer;
+        sum: function float (a: float, b: integer) {
+            return a + b;
+        }
+        main: function void () {
+            b: integer = 12;
+            a: float = sum(b, 3);
+            sum(true, 2);
+        }"""
+        expect = "Type mismatch in statement: CallStmt(sum, BooleanLit(True), IntegerLit(2))"
+        self.assertTrue(TestChecker.test(input, expect, 403))
+    
+    def test_auto_func(self):
+        input = """
+        a: integer;
+        foo: function auto () {
+            if (true) a = 10;
+        }
+        main: function void () {
+            foo();
+            c: auto = foo();
+        }"""
+        expect = "Type mismatch in Variable Declaration: VarDecl(c, AutoType, FuncCall(foo, []))"
+        self.assertTrue(TestChecker.test(input, expect, 419))
+
+    def test_auto_func2(self):
+        input = """
+        a: integer;
+        foo: function auto () {
+            if (true) a = 10;
+        }
+        main: function void () {
+            a: float = foo();
+            c: auto = foo();
+        }"""
+        expect = "Type mismatch in Variable Declaration: VarDecl(c, AutoType, FuncCall(foo, []))"
+        self.assertTrue(TestChecker.test(input, expect, 420))
+
