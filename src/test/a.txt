@@ -1,11 +1,7 @@
-
-main: function void () {
-  b: integer = 1 
-  func: function void () {
-    a: integer = b
-  }
+foo: function auto (a: auto) {
+  a = 1;
 }
 
-main: function void (a: integer) {
-  a: integer = 10
+main: function void () {
+  foo(false)
 }

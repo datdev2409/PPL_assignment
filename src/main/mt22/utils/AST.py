@@ -37,22 +37,31 @@ class AtomicType(Type):
 class IntegerType(AtomicType):
     def __str__(self):
         return self.__class__.__name__
+    
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class FloatType(AtomicType):
     def __str__(self):
         return self.__class__.__name__
 
+    def __repr__(self) -> str:
+        return self.__str__()
 
 class BooleanType(AtomicType):
     def __str__(self):
         return self.__class__.__name__
 
+    def __repr__(self) -> str:
+        return self.__str__()
 
 class StringType(AtomicType):
     def __str__(self):
         return self.__class__.__name__
 
+    def __repr__(self) -> str:
+        return self.__str__()
 
 class ArrayType(Type):
     def __init__(self, dimensions: List[int], typ: AtomicType):
@@ -61,17 +70,24 @@ class ArrayType(Type):
 
     def __str__(self):
         return "ArrayType([{}], {})".format(", ".join([str(dimen) for dimen in self.dimensions]), str(self.typ))
+    
+    def __repr__(self):
+        return "ArrayType([{}], {})".format(", ".join([str(dimen) for dimen in self.dimensions]), str(self.typ))
 
 
 class AutoType(Type):
     def __str__(self):
         return self.__class__.__name__
 
+    def __repr__(self) -> str:
+        return self.__str__()
 
 class VoidType(Type):
     def __str__(self):
         return self.__class__.__name__
 
+    def __repr__(self) -> str:
+        return self.__str__()
 
 # Expressions
 
